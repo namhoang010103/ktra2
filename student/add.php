@@ -19,7 +19,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     // Xử lý upload file hình ảnh
     $Hinh = '';
     if(isset($_FILES['Hinh']) && $_FILES['Hinh']['error'] == 0) {
-        $targetDir = "../uploads/"; // Thư mục để lưu hình ảnh
+        $targetDir = "../Content/images/"; // Thư mục để lưu hình ảnh
         if (!file_exists($targetDir)) {
             mkdir($targetDir, 0777, true);
         }
@@ -29,7 +29,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         // Kiểm tra định dạng file
         if(in_array($imageFileType, ['jpg', 'jpeg', 'png', 'gif'])) {
             if (move_uploaded_file($_FILES['Hinh']['tmp_name'], $targetFile)) {
-                $Hinh = basename($_FILES['Hinh']['name']); // Lưu tên file
+                $Hinh = basename($_FILES['Hinh']['name']); 
             } else {
                 echo "Error uploading file.";
                 exit;

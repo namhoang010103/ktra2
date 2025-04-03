@@ -11,12 +11,7 @@ if (!isset($_SESSION['MaSV'])) {
 
 if (isset($_GET['MaSV'])) {
     $MaSV = $_GET['MaSV'];
-    $Hinh = $sinhvien['Hinh'];
-    if (isset($_FILES['Hinh']) && $_FILES['Hinh']['error'] == 0) {
-        $target_dir = "Content/images/";
-        $Hinh = $target_dir . basename($_FILES['Hinh']['name']);
-        move_uploaded_file($_FILES['Hinh']['tmp_name'], $Hinh);
-    }
+
     $sql = "SELECT sv.MaSV, sv.HoTen, sv.GioiTinh, sv.NgaySinh, sv.Hinh, sv.MaNganh, nh.TenNganh 
             FROM SinhVien sv 
             JOIN NganhHoc nh ON sv.MaNganh = nh.MaNganh 
