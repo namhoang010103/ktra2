@@ -2,6 +2,7 @@
 session_start();
 include '../header.php';
 include '../db_connect.php';
+
 // Kiểm tra đăng nhập
 if (!isset($_SESSION['MaSV'])) {
     header("Location: login.php");
@@ -10,19 +11,16 @@ if (!isset($_SESSION['MaSV'])) {
 
 if (isset($_GET['MaSV'])) {
     $MaSV = $_GET['MaSV'];
-
     $sql = "SELECT * FROM SinhVien WHERE MaSV = ?";
     $stmt = $conn->prepare($sql);
     $stmt->bind_param("s", $MaSV);
     $stmt->execute();
     $result = $stmt->get_result();
     $student = $result->fetch_assoc();
-
     if (!$student) {
         echo "Sinh viên không tồn tại.";
         exit;
     }
-
     $stmt->close();
 }
 
@@ -31,9 +29,35 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $HoTen = $_POST['HoTen'];
     $GioiTinh = $_POST['GioiTinh'];
     $NgaySinh = $_POST['NgaySinh'];
-    $Hinh = $_POST['Hinh'];
     $MaNganh = $_POST['MaNganh'];
 
+    // Xử lý upload file hình ảnh
+    $Hinh = $student['Hinh']; // Giữ ảnh cũ nếu không có ảnh mới
+    if (isset($_FILES['Hinh']) && $_FILES['Hinh']['error'] == 0) {
+        $targetDir = "../Content/images/"; // Thư mục lưu ảnh
+        if (!file_exists($targetDir)) {
+            mkdir($targetDir, 0777, true);
+        }
+
+        $fileName = time() . "_" . basename($_FILES['Hinh']['name']); // Đổi tên file để tránh trùng
+        $targetFile = $targetDir . $fileName;
+        $imageFileType = strtolower(pathinfo($targetFile, PATHINFO_EXTENSION));
+
+        // Kiểm tra định dạng file hợp lệ
+        if (in_array($imageFileType, ['jpg', 'jpeg', 'png', 'gif'])) {
+            if (move_uploaded_file($_FILES['Hinh']['tmp_name'], $targetFile)) {
+                $Hinh = "/ktra1/Content/images/" . $fileName; // Lưu đường dẫn đúng vào DB
+            } else {
+                echo "Lỗi khi tải file lên.";
+                exit;
+            }
+        } else {
+            echo "Chỉ chấp nhận file JPG, JPEG, PNG, GIF.";
+            exit;
+        }
+    }
+
+    // Cập nhật vào database
     $sql = "UPDATE SinhVien SET HoTen = ?, GioiTinh = ?, NgaySinh = ?, Hinh = ?, MaNganh = ? WHERE MaSV = ?";
     $stmt = $conn->prepare($sql);
     $stmt->bind_param("ssssss", $HoTen, $GioiTinh, $NgaySinh, $Hinh, $MaNganh, $MaSV);
@@ -41,7 +65,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     if ($stmt->execute()) {
         echo "<script>alert('Cập nhật sinh viên thành công!'); window.location='../index.php';</script>";
     } else {
-        echo "Error: " . $conn->error;
+        echo "Lỗi khi cập nhật: " . $conn->error;
     }
 
     $stmt->close();
@@ -49,7 +73,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 ?>
 
 <h2>SỬA SINH VIÊN</h2>
-<form method="POST" action="">
+<form method="POST" action="" enctype="multipart/form-data"> <!-- Thêm enctype -->
     <div class="mb-3">
         <label for="MaSV" class="form-label">Mã SV:</label>
         <input type="text" class="form-control" id="MaSV" name="MaSV" value="<?php echo $student['MaSV']; ?>" readonly>
@@ -70,9 +94,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         <input type="date" class="form-control" id="NgaySinh" name="NgaySinh" value="<?php echo $student['NgaySinh']; ?>" required>
     </div>
     <div class="mb-3">
-        <label for="Hinh" class="form-label">Hinh hiện tại</label><br>
-        <img src="<?php echo $sinhvien['Hinh']; ?>" class="student-img" alt="Hinh"><br><br>
-        <label for="Hinh" class="form-label">Chọn hình mới</label>
+        <label>Hình hiện tại:</label><br>
+        <img src="<?php echo $student['Hinh']; ?>" class="student-img" alt="Hình" width="150"><br><br>
+        <label for="Hinh" class="form-label">Chọn hình mới:</label>
         <input type="file" class="form-control" id="Hinh" name="Hinh" accept="image/*">
     </div>
     <div class="mb-3">

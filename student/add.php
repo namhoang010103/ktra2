@@ -17,29 +17,32 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $MaNganh = $_POST['MaNganh'];
 
     // Xử lý upload file hình ảnh
-    $Hinh = '';
-    if(isset($_FILES['Hinh']) && $_FILES['Hinh']['error'] == 0) {
-        $targetDir = "../Content/images/"; // Thư mục để lưu hình ảnh
+    $Hinh = "";
+    if (isset($_FILES['Hinh']) && $_FILES['Hinh']['error'] == 0) {
+        $targetDir = "../Content/images/"; // Thư mục chứa ảnh
         if (!file_exists($targetDir)) {
             mkdir($targetDir, 0777, true);
         }
-        $targetFile = $targetDir . basename($_FILES['Hinh']['name']);
+
+        $fileName = time() . "_" . basename($_FILES['Hinh']['name']); // Đổi tên file tránh trùng
+        $targetFile = $targetDir . $fileName;
         $imageFileType = strtolower(pathinfo($targetFile, PATHINFO_EXTENSION));
 
         // Kiểm tra định dạng file
-        if(in_array($imageFileType, ['jpg', 'jpeg', 'png', 'gif'])) {
+        if (in_array($imageFileType, ['jpg', 'jpeg', 'png', 'gif'])) {
             if (move_uploaded_file($_FILES['Hinh']['tmp_name'], $targetFile)) {
-                $Hinh = basename($_FILES['Hinh']['name']); 
+                $Hinh = "/ktra1/Content/images/" . $fileName; // Lưu đường dẫn đúng vào CSDL
             } else {
-                echo "Error uploading file.";
+                echo "Lỗi khi tải file lên.";
                 exit;
             }
         } else {
-            echo "Only JPG, JPEG, PNG, and GIF files are allowed.";
+            echo "Chỉ chấp nhận file JPG, JPEG, PNG, GIF.";
             exit;
         }
     }
 
+    // Thêm dữ liệu vào database
     $sql = "INSERT INTO SinhVien (MaSV, HoTen, GioiTinh, NgaySinh, Hinh, MaNganh) 
             VALUES (?, ?, ?, ?, ?, ?)";
     $stmt = $conn->prepare($sql);
@@ -48,7 +51,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     if ($stmt->execute()) {
         echo "<script>alert('Thêm sinh viên thành công!'); window.location='../index.php';</script>";
     } else {
-        echo "Error: " . $conn->error;
+        echo "Lỗi khi thêm: " . $conn->error;
     }
 
     $stmt->close();
@@ -56,7 +59,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 ?>
 
 <h2>THÊM SINH VIÊN</h2>
-<form method="POST" action="" enctype="multipart/form-data">
+<form method="POST" action="" enctype="multipart/form-data"> <!-- Thêm enctype -->
     <div class="mb-3">
         <label for="MaSV" class="form-label">Mã SV:</label>
         <input type="text" class="form-control" id="MaSV" name="MaSV" required>
